@@ -2,16 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from .schemas import UserCreate, UserLogin
 from pydantic import BaseModel
 import bcrypt
+from firebase_admin import auth as firebase_auth
 
 router = APIRouter()
-
-#temporary solution no Firebase
-fake_users_db = {
-    "testuser": {
-        "username": "testuser",
-        "hashed_password": bcrypt.hashpw("password123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-    }
-}
 
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
@@ -22,20 +15,27 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 #register a new user
 @router.post("/register")
 async def register(user: UserCreate):
-    if user.username in fake_users_db:
-        raise HTTPException(status_code=400, detail="Username already registered")
-    hashed_pw = hash_password(user.password)
-    fake_users_db[user.username] = {
-        "username": user.username,
-        "hashed_password": hashed_pw
-    }
-    return {"message": "User registered successfully"}
+    try:
+        # create use in firebase
+        firebase_user = firebase_auth.create_user(
+            email=user.username,
+            password=user.password,
+            display_name=user.username
+        )
+        return {"message": "User registered successfully", "uid": firebase_user.uid}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 #login a user
 @router.post("/login")
 async def login_user(user: UserLogin):
-    stored_user = fake_users_db.get(user.username)
-    if not stored_user or not verify_password(user.password, stored_user["hashed_password"]):
+    try:
+        # verify user exists in firebase
+        firebase_user = firebase_auth.get_user_by_email(user.username)
+
+        #client side SDKs not implemented yet, so just checking if user exists in firebase for now
+        return {"access_token": firebase_user.uid, "token_type": "bearer"}
+    except firebase_auth.UserNotFoundError:
         raise HTTPException(status_code=400, detail="Invalid username or password")
-    #placeholder token
-    return {"access_token": user.username, "token_type": "bearer"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

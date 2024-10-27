@@ -1,6 +1,12 @@
 from typing import Union
 from fastapi import FastAPI
 from Backend.auth_module.routes import router as auth_router
+import firebase_admin
+from firebase_admin import credentials
+
+# initialize firebase
+cred = credentials.Certificate("Backend/config/congress-tracker-ff249-firebase-adminsdk-vcptd-58346d4a48.json")
+firebase_admin.initialize_app(cred)
 
 app = FastAPI()
 

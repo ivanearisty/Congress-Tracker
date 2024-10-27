@@ -8,6 +8,9 @@ settings.py
 # C extensions
 *.so
 
+#firebase config jason
+config/congress-tracker-ff249-firebase-adminsdk-vcptd-58346d4a48.json
+
 # Distribution / packaging
 .Python
 env/
