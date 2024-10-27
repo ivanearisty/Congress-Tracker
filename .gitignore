@@ -11,6 +11,8 @@ settings.py
 #firebase config jason
 config/congress-tracker-ff249-firebase-adminsdk-vcptd-58346d4a48.json
 
+.env
+
 # Distribution / packaging
 .Python
 env/
